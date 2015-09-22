@@ -55,7 +55,7 @@ So, instead of this...
 @Entity
 public class Person {
 	@Id private Long id;
-	<del>@Lob byte[] photo;</del>
+	@Lob byte[] photo;
 	...
 }
 ```
@@ -73,4 +73,4 @@ public class Person {
 
 ## Motivation
 
-You can read [blog post](http://lorenzo-dee.blogspot.com/2015/09/blob-handling-java-jdbc) to understand how this API began.
+You can read [blog post](http://lorenzo-dee.blogspot.com/2015/09/blob-handling-java-jdbc.html) to understand how this API began.
