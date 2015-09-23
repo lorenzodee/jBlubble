@@ -8,6 +8,28 @@
 
 	<packaging>pom</packaging>
 	<name>jblubble-parent</name>
+	<description>Making BLOB handling easier</description>
+	<url>https://github.com/lorenzodee/jBlubble</url>
+
+	<licenses>
+		<license>
+			<name>The Apache License, Version 2.0</name>
+			<url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
+		</license>
+	</licenses>
+	<developers>
+		<developer>
+			<name>Lorenzo Dee</name>
+			<email>lorenzo.dee@orangeandbronze.com</email>
+			<organization>Orange and Bronze Software Labs</organization>
+			<organizationUrl>http://www.orangeandbronze.com</organizationUrl>
+		</developer>
+	</developers>
+	<scm>
+		<connection>scm:git:git://github.com/lorenzodee/jBlubble</connection>
+		<developerConnection>scm:git:git://github.com/lorenzodee/jBlubble</developerConnection>
+		<url>https://github.com/lorenzodee/jBlubble</url>
+	</scm>
 
 	<modules>
 		<module>jblubble-api</module>
@@ -25,6 +47,7 @@
 		<slf4j.version>1.7.10</slf4j.version>
 		<logback.version>1.1.2</logback.version>
 		<hsqldb.version>2.3.2</hsqldb.version>
+		<hibernate.version>4.3.8.Final</hibernate.version>
 		<maven.compile.sourceLevel>1.8</maven.compile.sourceLevel>
 		<maven.compile.targetLevel>1.8</maven.compile.targetLevel>
 	</properties>

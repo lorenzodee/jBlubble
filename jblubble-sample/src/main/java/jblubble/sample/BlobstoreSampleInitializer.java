@@ -1,23 +1,42 @@
 package jblubble.sample;
 
-import javax.servlet.ServletContext;
-import javax.servlet.ServletException;
+import javax.servlet.Filter;
+import javax.servlet.MultipartConfigElement;
+import javax.servlet.ServletRegistration.Dynamic;
 
-import org.springframework.web.WebApplicationInitializer;
-import org.springframework.web.context.ContextLoaderListener;
-import org.springframework.web.context.support.AnnotationConfigWebApplicationContext;
+import org.springframework.web.filter.HiddenHttpMethodFilter;
+import org.springframework.web.multipart.support.MultipartFilter;
+import org.springframework.web.servlet.support.AbstractAnnotationConfigDispatcherServletInitializer;
 
-public class BlobstoreSampleInitializer implements WebApplicationInitializer {
+public class BlobstoreSampleInitializer extends AbstractAnnotationConfigDispatcherServletInitializer {
 
 	@Override
-	public void onStartup(ServletContext servletContext) throws ServletException {
-		// Create the 'root' Spring application context
-		AnnotationConfigWebApplicationContext rootContext =
-				new AnnotationConfigWebApplicationContext();
-		rootContext.register(BlobstoreSampleAppConfig.class);
+	protected Class<?>[] getRootConfigClasses() {
+		return new Class[] { BlobstoreSampleAppConfig.class };
+	}
 
-		// Manage the life-cycle of the root application context
-		servletContext.addListener(new ContextLoaderListener(rootContext));
+	@Override
+	protected Class<?>[] getServletConfigClasses() {
+		return new Class[] { BlobstoreSampleWebMvcConfig.class };
+	}
+
+	@Override
+	protected String[] getServletMappings() {
+		return new String[] { "/" };
+	}
+
+	@Override
+	protected Filter[] getServletFilters() {
+		return new Filter[] {
+				new MultipartFilter(),
+				new HiddenHttpMethodFilter()
+			};
+	}
+
+	@Override
+	protected void customizeRegistration(Dynamic registration) {
+		registration.setMultipartConfig(
+				new MultipartConfigElement((String) null));
 	}
 
 }
