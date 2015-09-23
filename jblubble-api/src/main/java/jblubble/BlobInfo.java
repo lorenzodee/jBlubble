@@ -9,13 +9,13 @@ import java.util.Date;
  */
 public class BlobInfo {
 
-	private final String blobKey;
+	private final BlobKey blobKey;
 	private final String name;
 	private final String contentType;
 	private final long size;
 	private final Date dateCreated;
 
-	public BlobInfo(String blobKey, String name, String contentType,
+	public BlobInfo(BlobKey blobKey, String name, String contentType,
 			long size, Date dateCreated) {
 		super();
 		this.blobKey = blobKey;
@@ -25,7 +25,7 @@ public class BlobInfo {
 		this.dateCreated = dateCreated;
 	}
 
-	public String getBlobKey() {
+	public BlobKey getBlobKey() {
 		return blobKey;
 	}
 

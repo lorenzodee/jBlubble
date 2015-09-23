@@ -14,6 +14,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import jblubble.BlobInfo;
+import jblubble.BlobKey;
 import jblubble.BlobstoreException;
 import jblubble.BlobstoreService;
 import jblubble.BlobstoreWriteCallback;
@@ -21,7 +22,7 @@ import jblubble.BlobstoreWriteCallback;
 public abstract class AbstractBlobstoreServiceTests {
 
 	protected BlobstoreService blobstoreService;
-	protected String blobKey;
+	protected BlobKey blobKey;
 
 	protected abstract BlobstoreService createBlobstoreService();
 	
@@ -59,7 +60,7 @@ public abstract class AbstractBlobstoreServiceTests {
 
 	@Test(expected = BlobstoreException.class)
 	public void createAndDeleteBlob() throws Exception {
-		String blobKey = createBlob("sample-image.png");
+		BlobKey blobKey = createBlob("sample-image.png");
 		blobstoreService.delete(blobKey);
 		assertNull(blobstoreService.getBlobInfo(blobKey));
 		blobstoreService.serveBlob(blobKey, null);
@@ -79,15 +80,15 @@ public abstract class AbstractBlobstoreServiceTests {
 
 	@Test
 	public void createSeveralAndDeleteThem() throws Exception {
-		String blobKeys[] = new String[4];
+		BlobKey blobKeys[] = new BlobKey[4];
 		for (int i = 0; i < blobKeys.length; i++) {
 			blobKeys[i] = createBlob("sample-image.png");
 		}
 		blobstoreService.delete(blobKeys);
 	}
 
-	protected String createBlob(String inputFileName) throws BlobstoreException, IOException {
-		String blobKey;
+	protected BlobKey createBlob(String inputFileName) throws BlobstoreException, IOException {
+		BlobKey blobKey;
 		InputStream in = getClass().getResourceAsStream(inputFileName);
 		assertNotNull("Input file not found [" + inputFileName + "]", in);
 		try {
@@ -139,11 +140,11 @@ public abstract class AbstractBlobstoreServiceTests {
 
 	@Test
 	public void deleteAndCheckUpdateCounts() throws Exception {
-		String blobKeys[] = new String[4];
+		BlobKey blobKeys[] = new BlobKey[4];
 		for (int i = 0; i < blobKeys.length - 1; i++) {
 			blobKeys[i] = createBlob("sample-image.png");
 		}
-		blobKeys[3] = "1234"; // this ID does not exist
+		blobKeys[3] = new BlobKey("1234"); // this ID does not exist
 		int[] updateCounts = blobstoreService.delete(blobKeys);
 		assertEquals(1, updateCounts[0]);
 		assertEquals(1, updateCounts[1]);

@@ -1,10 +1,13 @@
 package jblubble.sample;
 
 import javax.persistence.Column;
+import javax.persistence.Convert;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
+
+import jblubble.BlobKey;
 
 @Entity
 public class Person {
@@ -13,7 +16,8 @@ public class Person {
 	private Long id;
 	private String name;
 	@Column(name="photo_id")
-	private String photoId;
+	@Convert(converter=BlobKeyConverter.class)
+	private BlobKey photoId;
 
 	public Person() {}
 
@@ -29,11 +33,11 @@ public class Person {
 		this.name = name;
 	}
 
-	public String getPhotoId() {
+	public BlobKey getPhotoId() {
 		return photoId;
 	}
 
-	public void setPhotoId(String photoId) {
+	public void setPhotoId(BlobKey photoId) {
 		this.photoId = photoId;
 	}
 

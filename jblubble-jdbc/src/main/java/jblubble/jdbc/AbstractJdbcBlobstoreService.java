@@ -6,6 +6,7 @@ import java.io.OutputStream;
 
 import javax.sql.DataSource;
 
+import jblubble.BlobKey;
 import jblubble.BlobstoreException;
 import jblubble.BlobstoreService;
 import jblubble.BlobstoreWriteCallback;
@@ -85,7 +86,7 @@ public abstract class AbstractJdbcBlobstoreService implements BlobstoreService {
 	}
 
 	@Override
-	public String createBlob(InputStream in,
+	public BlobKey createBlob(InputStream in,
 			String name, String contentType)
 			throws IOException, BlobstoreException {
 		return createBlob(new BlobstoreWriteCallback() {

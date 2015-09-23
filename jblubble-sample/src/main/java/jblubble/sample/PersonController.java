@@ -9,12 +9,12 @@ import javax.persistence.PersistenceContext;
 import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.criteria.CriteriaQuery;
 import javax.servlet.http.HttpServletResponse;
-import javax.transaction.Transactional;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -25,6 +25,7 @@ import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.multipart.MultipartFile;
 
 import jblubble.BlobInfo;
+import jblubble.BlobKey;
 import jblubble.BlobstoreException;
 import jblubble.BlobstoreService;
 
@@ -69,8 +70,8 @@ public class PersonController {
 		return entityManager.createQuery(criteriaQuery).getResultList();
 	}
 
-	protected String createPhotoBlob(MultipartFile photoFile) {
-		String blobKey = null;
+	protected BlobKey createPhotoBlob(MultipartFile photoFile) {
+		BlobKey blobKey = null;
 		if (photoFile.isEmpty()) {
 			blobKey = null;
 		} else {
@@ -120,7 +121,7 @@ public class PersonController {
 		if (logger.isDebugEnabled()) {
 			logger.debug("Saving {}", person);
 		}
-		String blobKey = createPhotoBlob(photoFile);
+		BlobKey blobKey = createPhotoBlob(photoFile);
 		person.setPhotoId(blobKey);
 		entityManager.persist(person);
 		return "redirect:" + PATH;
@@ -147,7 +148,7 @@ public class PersonController {
 		Person existingPerson = getPersonById(id);
 		// Merge updatedPerson with existingPerson
 		existingPerson.setName(updatedPerson.getName());
-		String blobKey = createPhotoBlob(photoFile);
+		BlobKey blobKey = createPhotoBlob(photoFile);
 		if (existingPerson.getPhotoId() != null) {
 			blobstoreService.delete(existingPerson.getPhotoId());
 		}
@@ -164,7 +165,7 @@ public class PersonController {
 			throws BlobstoreException, IOException {
 		Person person = getPersonById(id);
 		if (person != null) {
-			String photoId = person.getPhotoId();
+			BlobKey photoId = person.getPhotoId();
 			if (photoId != null) {
 				BlobInfo blobInfo = blobstoreService.getBlobInfo(photoId);
 				if (webRequest.checkNotModified(blobInfo.getDateCreated().getTime())) {

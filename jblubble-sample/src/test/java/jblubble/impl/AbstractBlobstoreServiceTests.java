@@ -8,11 +8,13 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 
+import org.apache.commons.io.input.CountingInputStream;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
 import jblubble.BlobInfo;
+import jblubble.BlobKey;
 import jblubble.BlobstoreException;
 import jblubble.BlobstoreService;
 import jblubble.BlobstoreWriteCallback;
@@ -20,9 +22,11 @@ import jblubble.BlobstoreWriteCallback;
 public abstract class AbstractBlobstoreServiceTests {
 
 	protected BlobstoreService blobstoreService;
-	protected String blobKey;
+	protected BlobKey blobKey;
 
 	protected abstract BlobstoreService createBlobstoreService();
+	
+	protected abstract long countBlobs();
 
 	@Before
 	public void setUp() throws Exception {
@@ -56,7 +60,7 @@ public abstract class AbstractBlobstoreServiceTests {
 
 	@Test(expected = BlobstoreException.class)
 	public void createAndDeleteBlob() throws Exception {
-		String blobKey = createBlob("sample-image.png");
+		BlobKey blobKey = createBlob("sample-image.png");
 		blobstoreService.delete(blobKey);
 		assertNull(blobstoreService.getBlobInfo(blobKey));
 		blobstoreService.serveBlob(blobKey, null);
@@ -70,20 +74,21 @@ public abstract class AbstractBlobstoreServiceTests {
 		assertEquals("test", blobInfo.getName());
 		assertEquals("image/png", blobInfo.getContentType());
 		assertEquals(6792, blobInfo.getSize());
+		assertNotNull(blobInfo.getDateCreated());
 		assertEquals(blobKey, blobInfo.getBlobKey());
 	}
 
 	@Test
 	public void createSeveralAndDeleteThem() throws Exception {
-		String blobKeys[] = new String[4];
+		BlobKey blobKeys[] = new BlobKey[4];
 		for (int i = 0; i < blobKeys.length; i++) {
 			blobKeys[i] = createBlob("sample-image.png");
 		}
 		blobstoreService.delete(blobKeys);
 	}
 
-	protected String createBlob(String inputFileName) throws BlobstoreException, IOException {
-		String blobKey;
+	protected BlobKey createBlob(String inputFileName) throws BlobstoreException, IOException {
+		BlobKey blobKey;
 		InputStream in = getClass().getResourceAsStream(inputFileName);
 		assertNotNull("Input file not found [" + inputFileName + "]", in);
 		try {
@@ -135,16 +140,50 @@ public abstract class AbstractBlobstoreServiceTests {
 
 	@Test
 	public void deleteAndCheckUpdateCounts() throws Exception {
-		String blobKeys[] = new String[4];
+		BlobKey blobKeys[] = new BlobKey[4];
 		for (int i = 0; i < blobKeys.length - 1; i++) {
 			blobKeys[i] = createBlob("sample-image.png");
 		}
-		blobKeys[3] = "1234"; // this ID does not exist
+		blobKeys[3] = new BlobKey("1234"); // this ID does not exist
 		int[] updateCounts = blobstoreService.delete(blobKeys);
 		assertEquals(1, updateCounts[0]);
 		assertEquals(1, updateCounts[1]);
 		assertEquals(1, updateCounts[2]);
 		assertEquals(0, updateCounts[3]);
+	}
+
+	@Test
+	public void noRowsInsertedWhenInputStreamThrowsException() throws Exception {
+		String inputFileName = "sample-image.png";
+		InputStream in = getClass().getResourceAsStream(inputFileName);
+		assertNotNull("Input file not found [" + inputFileName + "]", in);
+		long originalCount = 0;
+		try {
+			in = new CountingInputStream(in) {
+				@Override
+				public int read(byte[] b, int off, int len) throws IOException {
+					if (getByteCount() > 4000) {
+						throw new IOException("Intended exception for test");
+					}
+					return super.read(b, off, len);
+				}
+
+				@Override
+				public int read(byte[] bts) throws IOException {
+					if (getByteCount() > 4000) {
+						throw new IOException("Intended exception for test");
+					}
+					return super.read(bts);
+				}
+			};
+			originalCount = countBlobs();
+			blobstoreService.createBlob(in, "test", "image/png");
+			fail("Exception should have been thrown");
+		} catch (IOException ioe) {
+			assertEquals(originalCount, countBlobs());
+		} finally {
+			in.close();
+		}
 	}
 
 }

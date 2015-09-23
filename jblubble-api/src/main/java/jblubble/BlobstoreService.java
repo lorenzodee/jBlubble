@@ -5,11 +5,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 
 /**
- * Manage the creation and serving of large binary objects.
- * <p>
- * This is intended to avoid having to use <code>byte[]</code> (byte arrays)
- * that would otherwise cause {@link OutOfMemoryError out of memory errors} in
- * some cases.
+ * Manage the creation and serving of large binary objects (or BLOBs).
  * <p>
  * When handling file uploads in {@linkplain servlets} (3.0 and above), this
  * is how the service can be used:
@@ -19,7 +15,7 @@ import java.io.OutputStream;
  * request.getPart("...").write(fileName);
  * // Open an input stream with the file (created from uploaded part)
  * InputStream in = new FileInputStream(fileName);
- * String blobKey = blobstoreService.createBlob(in, ...);
+ * ... blobKey = blobstoreService.createBlob(in, ...);
  * </pre>
  * <p>
  * <pre>
@@ -33,7 +29,7 @@ import java.io.OutputStream;
  * When using Spring MVC, this is how the service can be used inside a controller:
  * <pre>
  * // MultipartFile
- * String blobKey = blobstoreService.createBlob(
+ * ... blobKey = blobstoreService.createBlob(
  *     multipartFile.getInputStream(), multipartFile.getName(), ...);
  * </pre>
  */
@@ -43,6 +39,7 @@ public interface BlobstoreService {
 	 * Stores the blob and returns a unique identifier for later retrieval.
 	 * <p>
 	 * This method expects the blob contents coming from an {@link InputStream}.
+	 * The caller is responsible for closing this {@link InputStream input stream}.
 	 *
 	 * @param in
 	 *            the given blob
@@ -57,7 +54,7 @@ public interface BlobstoreService {
 	 * @throws BlobstoreException
 	 *             when an error occurs while storing the blob
 	 */
-	String createBlob(InputStream in,
+	BlobKey createBlob(InputStream in,
 			String name, String contentType)
 			throws IOException, BlobstoreException;
 
@@ -80,7 +77,7 @@ public interface BlobstoreService {
 	 * @throws BlobstoreException
 	 *             when an error occurs while storing the blob
 	 */
-	String createBlob(
+	BlobKey createBlob(
 			BlobstoreWriteCallback callback, String name,
 			String contentType)
 			throws IOException, BlobstoreException;
@@ -90,7 +87,7 @@ public interface BlobstoreService {
 	 * <code>null</code> if no blob exists with the given identifier.
 	 * <p>
 	 * This <em>does not</em> return the contents of the blob. See
-	 * {@link #serveBlob(String, OutputStream)} for this.
+	 * {@link #serveBlob(BlobKey, OutputStream)} for this.
 	 *
 	 * @param blobKey
 	 *            the unique identifier
@@ -98,7 +95,7 @@ public interface BlobstoreService {
 	 * @throws BlobstoreException
 	 *             if an error occurs while retrieving the metadata of the blob
 	 */
-	BlobInfo getBlobInfo(String blobKey) throws BlobstoreException;
+	BlobInfo getBlobInfo(BlobKey blobKey) throws BlobstoreException;
 
 	/**
 	 * Writes the blob with the given identifier to the given output stream.
@@ -113,7 +110,7 @@ public interface BlobstoreService {
 	 *             if an error occurs while retrieving the blob (e.g. does not
 	 *             exist)
 	 */
-	void serveBlob(String blobKey, OutputStream out) throws IOException, BlobstoreException;
+	void serveBlob(BlobKey blobKey, OutputStream out) throws IOException, BlobstoreException;
 
 	/**
 	 * Deletes the specified blobs.
@@ -124,6 +121,6 @@ public interface BlobstoreService {
 	 * @throws BlobstoreException
 	 *             if an error occurs while deleting the blobs
 	 */
-	int[] delete(String... blobKeys) throws BlobstoreException;
+	int[] delete(BlobKey... blobKeys) throws BlobstoreException;
 
 }

@@ -21,14 +21,16 @@ import org.springframework.jdbc.core.ResultSetExtractor;
 import org.springframework.jdbc.support.GeneratedKeyHolder;
 
 import jblubble.BlobInfo;
+import jblubble.BlobKey;
 import jblubble.BlobstoreException;
 import jblubble.BlobstoreService;
 import jblubble.BlobstoreWriteCallback;
 import jblubble.jdbc.AbstractJdbcBlobstoreService;
 
 /**
- * {@link BlobstoreService Blobstore service} implementation using
- * {@link JdbcTemplate} in Spring Framework.
+ * An experimental {@link BlobstoreService blobstore service} implementation
+ * using {@link JdbcTemplate} in Spring Framework. Using {@link JdbcTemplate
+ * JDBC template} translates JDBC exceptions to {@link DataAccessException}s.
  *
  */
 public class SpringJdbcBlobstoreService extends AbstractJdbcBlobstoreService {
@@ -41,7 +43,7 @@ public class SpringJdbcBlobstoreService extends AbstractJdbcBlobstoreService {
 	}
 
 	@Override
-	public String createBlob(BlobstoreWriteCallback callback,
+	public BlobKey createBlob(BlobstoreWriteCallback callback,
 			String name, String contentType)
 					throws IOException, BlobstoreException {
 		try {
@@ -86,14 +88,15 @@ public class SpringJdbcBlobstoreService extends AbstractJdbcBlobstoreService {
 							}
 						}
 					}, keyHolder);
-			return String.valueOf(keyHolder.getKey().longValue());
+			return new BlobKey(
+					String.valueOf(keyHolder.getKey().longValue()));
 		} catch (DataAccessException e) {
 			throw new BlobstoreException(e);
 		}
 	}
 
 	@Override
-	public BlobInfo getBlobInfo(String blobKey) throws BlobstoreException {
+	public BlobInfo getBlobInfo(BlobKey blobKey) throws BlobstoreException {
 		try {
 			return jdbcTemplate.query(
 					getSelectNonContentFieldsByIdSql(),
@@ -111,14 +114,14 @@ public class SpringJdbcBlobstoreService extends AbstractJdbcBlobstoreService {
 									rs.getLong("size"),
 									rs.getTimestamp("date_created"));
 						}
-					}, Long.valueOf(blobKey));
+					}, Long.valueOf(blobKey.stringValue()));
 		} catch (DataAccessException e) {
 			throw new BlobstoreException(e);
 		}
 	}
 
 	@Override
-	public void serveBlob(String blobKey, OutputStream out)
+	public void serveBlob(BlobKey blobKey, OutputStream out)
 			throws IOException, BlobstoreException {
 		try {
 			jdbcTemplate.query(
@@ -140,14 +143,14 @@ public class SpringJdbcBlobstoreService extends AbstractJdbcBlobstoreService {
 							}
 							return blob.length();
 						}
-					}, Long.valueOf(blobKey));
+					}, Long.valueOf(blobKey.stringValue()));
 		} catch (DataAccessException e) {
 			throw new BlobstoreException(e);
 		}
 	}
 
 	@Override
-	public int[] delete(String... blobKeys) throws BlobstoreException {
+	public int[] delete(BlobKey... blobKeys) throws BlobstoreException {
 		try {
 			return jdbcTemplate.batchUpdate(
 					getDeleteByIdSql(),
@@ -155,7 +158,7 @@ public class SpringJdbcBlobstoreService extends AbstractJdbcBlobstoreService {
 						@Override
 						public void setValues(PreparedStatement ps, int i)
 								throws SQLException {
-							ps.setLong(1, Long.valueOf(blobKeys[i]));
+							ps.setLong(1, Long.valueOf(blobKeys[i].stringValue()));
 						}
 						
 						@Override

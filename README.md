@@ -60,7 +60,7 @@ So, instead of this...
 @Entity
 public class Person {
 	@Id private Long id;
-	@Lob byte[] photo;
+	@Lob private byte[] photo;
 	...
 }
 ```
@@ -71,7 +71,7 @@ public class Person {
 @Entity
 public class Person {
 	@Id private Long id;
-	String photoId; // retrieved via BlobstoreService
+	... BlobKey photoId; // retrieved via BlobstoreService
 	...
 }
 ```

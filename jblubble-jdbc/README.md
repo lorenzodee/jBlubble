@@ -9,4 +9,4 @@ This contains a JDBC implementation of the `BlobstoreService` interface. It uses
 - size (length of BLOB in bytes)
 - date created (timestamp)
 
-A sample <abbr title="Data Definition Language">DDL</abbr> file to create the `lobs` table is available at [src/main/resources/jblubble/impl](src/main/resources/jblubble/impl). The DDL is only tested for HSQL in-memory database. Ports of the DDL to other databases are welcome. 
+A sample <abbr title="Data Definition Language">DDL</abbr> file to create the `lobs` table is available at [src/main/resources/jblubble/jdbc](src/main/resources/jblubble/jdbc). The DDL is only tested for HSQL in-memory database. Ports of the DDL to other databases are welcome. 

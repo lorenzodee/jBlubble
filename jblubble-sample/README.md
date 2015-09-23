@@ -11,5 +11,5 @@ To run the sample:
 
 	> mvn tomcat7:run
 
-Then go to [http://localhost:8080/jblubble-sample/uploads](http://localhost:8080/jblubble-sample/uploads).
+Then go to [http://localhost:8080/jblubble-sample/uploads](http://localhost:8080/jblubble-sample/uploads) which is handled by `UploadServlet`. You can also go to [http://localhost:8080/jblubble-sample/persons](http://localhost:8080/jblubble-sample/persons) which is handled by a Spring MVC controller &mdash; `PersonController` and uses JPA. There you can see how a BLOB is referenced by key. A JPA `AttributeConverter` was used to convert `BlobKey`.
 

@@ -15,6 +15,7 @@ import javax.sql.DataSource;
 import org.apache.commons.io.output.CountingOutputStream;
 
 import jblubble.BlobInfo;
+import jblubble.BlobKey;
 import jblubble.BlobstoreException;
 import jblubble.BlobstoreService;
 import jblubble.BlobstoreWriteCallback;
@@ -46,7 +47,7 @@ public class JdbcBlobstoreService extends AbstractJdbcBlobstoreService {
 	}
 
 	@Override
-	public String createBlob(BlobstoreWriteCallback callback,
+	public BlobKey createBlob(BlobstoreWriteCallback callback,
 			String name, String contentType)
 					throws IOException, BlobstoreException {
 		try {
@@ -87,7 +88,7 @@ public class JdbcBlobstoreService extends AbstractJdbcBlobstoreService {
 								"Creating blob failed, no rows created.");
 					}
 					long generatedId = getGeneratedKey(ps);
-					return String.valueOf(generatedId);
+					return new BlobKey(String.valueOf(generatedId));
 				} finally {
 					content.free();
 				}
@@ -98,14 +99,14 @@ public class JdbcBlobstoreService extends AbstractJdbcBlobstoreService {
 	}
 
 	@Override
-	public BlobInfo getBlobInfo(String blobKey) throws BlobstoreException {
+	public BlobInfo getBlobInfo(BlobKey blobKey) throws BlobstoreException {
 		try {
 			try (
 					Connection connection = dataSource.getConnection();
 					PreparedStatement ps = connection.prepareStatement(
 							getSelectNonContentFieldsByIdSql());
 				) {
-				ps.setLong(1, Long.valueOf(blobKey));
+				ps.setLong(1, Long.valueOf(blobKey.stringValue()));
 				try (ResultSet rs = ps.executeQuery()) {
 					if (!rs.next()) {
 						return null;
@@ -125,17 +126,17 @@ public class JdbcBlobstoreService extends AbstractJdbcBlobstoreService {
 	}
 
 	@Override
-	public void serveBlob(String blobKey, OutputStream out)
+	public void serveBlob(BlobKey blobKey, OutputStream out)
 			throws IOException, BlobstoreException {
 		serveBlob(blobKey, out, 1);
 	}
 
-	public void serveBlob(String blobKey, OutputStream out, long start)
+	public void serveBlob(BlobKey blobKey, OutputStream out, long start)
 			throws IOException, BlobstoreException {
 		serveBlob(blobKey, out, start, -1);
 	}
 
-	public void serveBlob(String blobKey, OutputStream out, long start, long end)
+	public void serveBlob(BlobKey blobKey, OutputStream out, long start, long end)
 			throws IOException, BlobstoreException {
 		try {
 			try (
@@ -143,7 +144,7 @@ public class JdbcBlobstoreService extends AbstractJdbcBlobstoreService {
 					PreparedStatement ps = connection.prepareStatement(
 							getSelectContentByIdSql());
 				) {
-				ps.setLong(1, Long.valueOf(blobKey));
+				ps.setLong(1, Long.valueOf(blobKey.stringValue()));
 				try (ResultSet rs = ps.executeQuery()) {
 					if (!rs.next()) {
 						throw new BlobstoreException(
@@ -166,8 +167,8 @@ public class JdbcBlobstoreService extends AbstractJdbcBlobstoreService {
 	}
 
 	@Override
-	public int[] delete(String... blobKeys) throws BlobstoreException {
-		for (String blobKey : blobKeys) {
+	public int[] delete(BlobKey... blobKeys) throws BlobstoreException {
+		for (BlobKey blobKey : blobKeys) {
 			if (blobKey == null) {
 				throw new IllegalArgumentException(
 						"Blob keys cannot be null");
@@ -179,8 +180,8 @@ public class JdbcBlobstoreService extends AbstractJdbcBlobstoreService {
 					PreparedStatement ps = connection.prepareStatement(
 							getDeleteByIdSql());
 				) {
-				for (String blobKey : blobKeys) {
-					ps.setLong(1, Long.valueOf(blobKey));
+				for (BlobKey blobKey : blobKeys) {
+					ps.setLong(1, Long.valueOf(blobKey.stringValue()));
 					ps.addBatch();
 				}
 				return ps.executeBatch();

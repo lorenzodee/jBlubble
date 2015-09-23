@@ -22,4 +22,9 @@ public class SpringJdbcBlobstoreServiceTests extends AbstractBlobstoreServiceTes
 		return  new SpringJdbcBlobstoreService(dataSource);
 	}
 
+	@Override
+	protected long countBlobs() {
+		return 0;
+	}
+
 }
