@@ -39,8 +39,13 @@ When using Spring MVC, this is how it can be used inside a controller:
 
 ## Running the Sample
 
-A sample webapp to help get you started is in [jblubble-sample](jblubble-sample). To run the sample:
+A sample webapp to help get you started is in [jblubble-sample](jblubble-sample). To run the sample, install dependencies first, then run the web app:
 
+	> cd jblubble-api
+	> mvn install
+	> cd ../jblubble-jdbc
+	> mvn install
+	> cd ../jblubble-sample
 	> mvn tomcat7:run
 
 Then go to [http://localhost:8080/jblubble-sample/uploads](http://localhost:8080/jblubble-sample/uploads).
