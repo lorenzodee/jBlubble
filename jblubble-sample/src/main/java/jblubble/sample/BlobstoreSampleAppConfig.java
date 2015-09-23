@@ -28,7 +28,7 @@ public class BlobstoreSampleAppConfig {
 		EmbeddedDatabaseBuilder builder = new EmbeddedDatabaseBuilder();
 		EmbeddedDatabase db = builder
 				.setType(EmbeddedDatabaseType.HSQL)
-				.addScript("classpath:/jblubble/impl/create-lob-table.sql")
+				.addScript("classpath:/jblubble/jdbc/create-lob-table.sql")
 				.addScript("classpath:/jblubble/sample/create-person-table.sql")
 				.build();
 		return db;
