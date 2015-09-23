@@ -1,4 +1,4 @@
-package jblubble.impl;
+package jblubble.jdbc;
 
 import java.io.IOException;
 import java.io.InputStream;

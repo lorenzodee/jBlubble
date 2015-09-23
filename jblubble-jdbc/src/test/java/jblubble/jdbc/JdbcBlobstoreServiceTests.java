@@ -1,4 +1,4 @@
-package jblubble.impl;
+package jblubble.jdbc;
 
 import javax.sql.DataSource;
 
@@ -9,7 +9,7 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import jblubble.BlobstoreService;
-import jblubble.impl.JdbcBlobstoreService;
+import jblubble.jdbc.JdbcBlobstoreService;
 
 @ContextConfiguration
 @RunWith(SpringJUnit4ClassRunner.class)

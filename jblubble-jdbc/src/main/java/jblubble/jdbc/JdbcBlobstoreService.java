@@ -1,4 +1,4 @@
-package jblubble.impl;
+package jblubble.jdbc;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -59,34 +59,38 @@ public class JdbcBlobstoreService extends AbstractJdbcBlobstoreService {
 				ps.setString(1, name);
 				ps.setString(2, contentType);
 				Blob content = connection.createBlob();
-				long size;
-				OutputStream out = content.setBinaryStream(1L);
 				try {
-					CountingOutputStream countingOutputStream =
-							new CountingOutputStream(out);
+					long size;
+					OutputStream out = content.setBinaryStream(1L);
 					try {
-						size = callback.writeToOutputStream(
-								countingOutputStream);
-						if (size == -1L) {
-							size = countingOutputStream.getByteCount();
+						CountingOutputStream countingOutputStream =
+								new CountingOutputStream(out);
+						try {
+							size = callback.writeToOutputStream(
+									countingOutputStream);
+							if (size == -1L) {
+								size = countingOutputStream.getByteCount();
+							}
+						} finally {
+							countingOutputStream.close();
 						}
 					} finally {
-						countingOutputStream.close();
+						out.close();
 					}
+					ps.setBlob(3, content);
+					ps.setLong(4, size);
+					ps.setTimestamp(5, new java.sql.Timestamp(
+							new java.util.Date().getTime()));
+					int rowCount = ps.executeUpdate();
+					if (rowCount == 0) {
+						throw new BlobstoreException(
+								"Creating blob failed, no rows created.");
+					}
+					long generatedId = getGeneratedKey(ps);
+					return String.valueOf(generatedId);
 				} finally {
-					out.close();
+					content.free();
 				}
-				ps.setBlob(3, content);
-				ps.setLong(4, size);
-				ps.setTimestamp(5, new java.sql.Timestamp(
-						new java.util.Date().getTime()));
-				int rowCount = ps.executeUpdate();
-				if (rowCount == 0) {
-					throw new BlobstoreException(
-							"Creating blob failed, no rows created.");
-				}
-				long generatedId = getGeneratedKey(ps);
-				return String.valueOf(generatedId);
 			}
 		} catch (SQLException e) {
 			throw new BlobstoreException("Error when creating blob", e);

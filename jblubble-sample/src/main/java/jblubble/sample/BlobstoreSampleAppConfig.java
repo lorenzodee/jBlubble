@@ -17,7 +17,7 @@ import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
 
 import jblubble.BlobstoreService;
-import jblubble.impl.JdbcBlobstoreService;
+import jblubble.jdbc.JdbcBlobstoreService;
 
 @Configuration
 @EnableTransactionManagement

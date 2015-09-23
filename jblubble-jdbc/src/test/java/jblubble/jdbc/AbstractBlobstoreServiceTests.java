@@ -1,4 +1,4 @@
-package jblubble.impl;
+package jblubble.jdbc;
 
 import static org.junit.Assert.*;
 

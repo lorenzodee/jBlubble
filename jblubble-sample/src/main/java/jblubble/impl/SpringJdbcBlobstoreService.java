@@ -24,6 +24,7 @@ import jblubble.BlobInfo;
 import jblubble.BlobstoreException;
 import jblubble.BlobstoreService;
 import jblubble.BlobstoreWriteCallback;
+import jblubble.jdbc.AbstractJdbcBlobstoreService;
 
 /**
  * {@link BlobstoreService Blobstore service} implementation using
