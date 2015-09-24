@@ -26,9 +26,9 @@
 		</developer>
 	</developers>
 	<scm>
-		<connection>scm:git:git://github.com/lorenzodee/jBlubble</connection>
-		<developerConnection>scm:git:git://github.com/lorenzodee/jBlubble</developerConnection>
-		<url>https://github.com/lorenzodee/jBlubble.git</url>
+		<connection>scm:git:git://github.com/lorenzodee/jBlubble.git</connection>
+		<developerConnection>scm:git:git://github.com/lorenzodee/jBlubble.git</developerConnection>
+		<url>https://github.com/lorenzodee/jBlubble</url>
 	</scm>
 
 	<modules>
