@@ -179,7 +179,7 @@ public abstract class AbstractBlobstoreServiceTests {
 			originalCount = countBlobs();
 			blobstoreService.createBlob(in, "test", "image/png");
 			fail("Exception should have been thrown");
-		} catch (IOException ioe) {
+		} catch (Exception ex) {
 			assertEquals(originalCount, countBlobs());
 		} finally {
 			in.close();
