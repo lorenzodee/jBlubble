@@ -28,7 +28,7 @@
 	<scm>
 		<connection>scm:git:git://github.com/lorenzodee/jBlubble</connection>
 		<developerConnection>scm:git:git://github.com/lorenzodee/jBlubble</developerConnection>
-		<url>https://github.com/lorenzodee/jBlubble</url>
+		<url>https://github.com/lorenzodee/jBlubble.git</url>
 	</scm>
 
 	<modules>
@@ -48,6 +48,7 @@
 		<logback.version>1.1.2</logback.version>
 		<hsqldb.version>2.3.2</hsqldb.version>
 		<hibernate.version>4.3.8.Final</hibernate.version>
+		<jdk.version>8</jdk.version>
 		<maven.compile.sourceLevel>1.8</maven.compile.sourceLevel>
 		<maven.compile.targetLevel>1.8</maven.compile.targetLevel>
 	</properties>
@@ -227,5 +228,82 @@
 			</plugin>
 		</plugins>
 	</build>
+
+	<profiles>
+		<profile>
+			<id>release</id>
+			<modules>
+				<module>jblubble-api</module>
+				<!-- module>jblubble-common</module -->
+				<module>jblubble-jdbc</module>
+				<!-- module>jblubble-spring</module -->
+			</modules>
+			<build>
+				<plugins>
+					<plugin>
+						<groupId>org.apache.maven.plugins</groupId>
+						<artifactId>maven-source-plugin</artifactId>
+						<version>2.4</version>
+						<executions>
+							<execution>
+								<id>attach-sources</id>
+								<phase>prepare-package</phase>
+								<goals>
+									<goal>jar-no-fork</goal>
+								</goals>
+							</execution>
+						</executions>
+					</plugin>
+					<plugin>
+						<groupId>org.apache.maven.plugins</groupId>
+						<artifactId>maven-javadoc-plugin</artifactId>
+						<version>2.10.3</version>
+						<configuration>
+							<javaApiLinks>
+								<property>
+									<name>api_1.${jdk.version}</name>
+									<value>http://docs.oracle.com/javase/${jdk.version}/docs/api/</value>
+								</property>
+							</javaApiLinks>
+						</configuration>
+						<executions>
+							<execution>
+								<id>attach-javadoc</id>
+								<phase>package</phase>
+								<goals>
+									<goal>jar</goal>
+								</goals>
+							</execution>
+						</executions>
+					</plugin>
+					<plugin>
+						<groupId>org.apache.maven.plugins</groupId>
+						<artifactId>maven-gpg-plugin</artifactId>
+						<version>1.6</version>
+						<executions>
+							<execution>
+								<id>gpg-sign</id>
+								<phase>verify</phase>
+								<goals>
+									<goal>sign</goal>
+								</goals>
+							</execution>
+						</executions>
+					</plugin>
+				</plugins>
+			</build>
+		</profile>
+	</profiles>
+
+	<distributionManagement>
+		<snapshotRepository>
+			<id>ossrh</id>
+			<url>https://oss.sonatype.org/content/repositories/snapshots</url>
+		</snapshotRepository>
+		<repository>
+			<id>ossrh</id>
+			<url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
+		</repository>
+	</distributionManagement>
 
 </project>
