@@ -37,6 +37,23 @@ When using Spring MVC, this is how it can be used inside a controller:
     multipartFile.getInputStream(), multipartFile.getName(), ...);
 ```
 
+## Maven Dependency
+
+To use in your Maven build, add the following to your `pom.xml`.
+
+	<dependency>
+		<groupId>com.orangeandbronze</groupId>
+		<artifactId>jblubble-api</artifactId>
+		<version>1.0</version>
+	</dependency>
+	<dependency>
+		<groupId>com.orangeandbronze</groupId>
+		<artifactId>jblubble-jdbc</artifactId>
+		<version>1.0</version>
+		<scope>runtime</scope>
+	</dependency>
+
+
 ## Running the Sample
 
 A sample webapp to help get you started is in [jblubble-sample](jblubble-sample). To run the sample, install dependencies first, then run the web app:
