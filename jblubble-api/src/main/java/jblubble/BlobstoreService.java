@@ -7,9 +7,9 @@ import java.io.OutputStream;
 /**
  * Manage the creation and serving of large binary objects (or BLOBs).
  * <p>
- * When handling file uploads in {@linkplain servlets} (3.0 and above), this
- * is how the service can be used:
- * 
+ * When handling file uploads in servlets (3.0 and above), this is how the
+ * service can be used:
+ * </p>
  * <pre>
  * // HttpServletRequest
  * request.getPart("...").write(fileName);
@@ -17,7 +17,6 @@ import java.io.OutputStream;
  * InputStream in = new FileInputStream(fileName);
  * ... blobKey = blobstoreService.createBlob(in, ...);
  * </pre>
- * <p>
  * <pre>
  * // HttpServletResponse
  * BlobInfo blobInfo = blobstoreService.getBlobInfo(blobKey);
@@ -26,7 +25,9 @@ import java.io.OutputStream;
  * blobstoreService.serveBlob(blobKey, out);
  * </pre>
  * <p>
- * When using Spring MVC, this is how the service can be used inside a controller:
+ * When using Spring MVC, this is how the service can be used inside a
+ * controller:
+ * 
  * <pre>
  * // MultipartFile
  * ... blobKey = blobstoreService.createBlob(
@@ -110,7 +111,8 @@ public interface BlobstoreService {
 	 *             if an error occurs while retrieving the blob (e.g. does not
 	 *             exist)
 	 */
-	void serveBlob(BlobKey blobKey, OutputStream out) throws IOException, BlobstoreException;
+	void serveBlob(BlobKey blobKey, OutputStream out)
+			throws IOException, BlobstoreException;
 
 	/**
 	 * Deletes the specified blobs.
