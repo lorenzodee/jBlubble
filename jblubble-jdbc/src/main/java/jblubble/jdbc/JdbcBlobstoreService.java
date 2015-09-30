@@ -17,6 +17,7 @@ import org.apache.commons.io.output.CountingOutputStream;
 import jblubble.BlobInfo;
 import jblubble.BlobKey;
 import jblubble.BlobstoreException;
+import jblubble.BlobstoreReadCallback;
 import jblubble.BlobstoreService;
 import jblubble.BlobstoreWriteCallback;
 
@@ -128,42 +129,34 @@ public class JdbcBlobstoreService extends AbstractJdbcBlobstoreService {
 	@Override
 	public void serveBlob(BlobKey blobKey, OutputStream out)
 			throws IOException, BlobstoreException {
-		serveBlob(blobKey, out, 1);
+		serveBlob(blobKey, out, 0);
 	}
 
+	@Override
 	public void serveBlob(BlobKey blobKey, OutputStream out, long start)
 			throws IOException, BlobstoreException {
-		serveBlob(blobKey, out, start, -1);
+		serveBlobInternal(blobKey, out, start, -1, false);
 	}
 
+	@Override
 	public void serveBlob(BlobKey blobKey, OutputStream out, long start, long end)
 			throws IOException, BlobstoreException {
-		try {
-			try (
-					Connection connection = dataSource.getConnection();
-					PreparedStatement ps = connection.prepareStatement(
-							getSelectContentByIdSql());
-				) {
-				ps.setLong(1, Long.valueOf(blobKey.stringValue()));
-				try (ResultSet rs = ps.executeQuery()) {
-					if (!rs.next()) {
-						throw new BlobstoreException(
-								"Blob not found: " + blobKey);
-					}
-					Blob blob = rs.getBlob(1);
-					try {
-						blob.getBinaryStream(start, end <= 0 ? blob.length() : end);
-						try (InputStream in = blob.getBinaryStream()) {
-							copy(in, out);
-						}
-					} finally {
-						blob.free();
-					}
+		serveBlobInternal(blobKey, out, start, end, true);
+	}
+
+	protected void serveBlobInternal(
+			BlobKey blobKey, OutputStream out, long start, long end, boolean useEnd)
+			throws IOException, BlobstoreException {
+		readBlobInternal(blobKey, new BlobHandler() {
+			@Override
+			public void handleBlob(Blob blob) throws SQLException, IOException {
+				long pos = start + 1; // for java.sql.Blob the first byte is at position 1
+				long length = useEnd ? (end - start + 1) : blob.length();
+				try (InputStream in = blob.getBinaryStream(pos, length)) {
+					copy(in, out);
 				}
 			}
-		} catch (SQLException e) {
-			throw new BlobstoreException("Error when retrieving blob", e);
-		}
+		});
 	}
 
 	@Override
@@ -189,6 +182,50 @@ public class JdbcBlobstoreService extends AbstractJdbcBlobstoreService {
 		} catch (SQLException e) {
 			throw new BlobstoreException(
 					"Error when deleting blobs", e);
+		}
+	}
+
+	@Override
+	public void readBlob(BlobKey blobKey, BlobstoreReadCallback callback)
+			throws IOException, BlobstoreException {
+		readBlobInternal(blobKey, new BlobHandler() {
+			@Override
+			public void handleBlob(Blob blob) throws SQLException, IOException {
+				try (InputStream in = blob.getBinaryStream()) {
+					callback.readInputStream(in);
+				}
+			}
+		});
+	}
+
+	interface BlobHandler {
+		void handleBlob(Blob blob) throws SQLException, IOException;
+	}
+
+	protected void readBlobInternal(BlobKey blobKey, BlobHandler blobHandler)
+		throws IOException, BlobstoreException {
+		try {
+			try (
+					Connection connection = dataSource.getConnection();
+					PreparedStatement ps = connection.prepareStatement(
+							getSelectContentByIdSql());
+				) {
+				ps.setLong(1, Long.valueOf(blobKey.stringValue()));
+				try (ResultSet rs = ps.executeQuery()) {
+					if (!rs.next()) {
+						throw new BlobstoreException(
+								"Blob not found: " + blobKey);
+					}
+					Blob blob = rs.getBlob(1);
+					try {
+						blobHandler.handleBlob(blob);
+					} finally {
+						blob.free();
+					}
+				}
+			}
+		} catch (SQLException e) {
+			throw new BlobstoreException("Error when retrieving blob", e);
 		}
 	}
 

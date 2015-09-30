@@ -2,11 +2,17 @@ package jblubble.jdbc;
 
 import static org.junit.Assert.*;
 
+import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.Iterator;
+
+import javax.imageio.ImageIO;
+import javax.imageio.ImageReader;
+import javax.imageio.stream.ImageInputStream;
 
 import org.apache.commons.io.input.CountingInputStream;
 import org.junit.After;
@@ -16,6 +22,7 @@ import org.junit.Test;
 import jblubble.BlobInfo;
 import jblubble.BlobKey;
 import jblubble.BlobstoreException;
+import jblubble.BlobstoreReadCallback;
 import jblubble.BlobstoreService;
 import jblubble.BlobstoreWriteCallback;
 
@@ -184,6 +191,81 @@ public abstract class AbstractBlobstoreServiceTests {
 		} finally {
 			in.close();
 		}
+	}
+
+	@Test
+	public void createAndServeBlobByteRange() throws Exception {
+		String inputFileName = "sample-image.png";
+		blobKey = createBlob(inputFileName);
+		File outputFile = new File("target/retrieved-image.png");
+		OutputStream out = new FileOutputStream(outputFile);
+		try {
+			// sample-image.png is 6792 bytes long
+			blobstoreService.serveBlob(blobKey, out, 0, 4000);
+			blobstoreService.serveBlob(blobKey, out, 4001, 6791);
+		} finally {
+			out.close();
+		}
+		assertEquals(
+				new File(getClass().getResource(inputFileName).toURI()).length(),
+				outputFile.length());
+		// Check if image is still intact
+		BufferedImage outputImage = ImageIO.read(outputFile);
+		assertEquals(252, outputImage.getWidth());
+		assertEquals(150, outputImage.getHeight());
+		ImageInputStream imageInputStream = ImageIO.createImageInputStream(outputFile);
+		try {
+			Iterator<ImageReader> imageReaders = ImageIO.getImageReaders(imageInputStream);
+			assertTrue(imageReaders.hasNext());
+			assertEquals("png", imageReaders.next().getFormatName());
+		} finally {
+			imageInputStream.close();
+		}
+		assertTrue(outputFile.delete());
+	}
+
+	class ImageReadCallback implements BlobstoreReadCallback {
+
+		private int width = -1;
+		private int height = -1;
+		private boolean called = false;
+
+		@Override
+		public void readInputStream(InputStream in) throws IOException {
+			BufferedImage image = ImageIO.read(in);
+			width = image.getWidth();
+			height = image.getHeight();
+			called = true;
+		}
+		
+		public boolean isCalled() {
+			return called;
+		}
+
+		public int getWidth() {
+			if (! isCalled()) {
+				throw new IllegalStateException();
+			}
+			return width;
+		}
+
+		public int getHeight() {
+			if (! isCalled()) {
+				throw new IllegalStateException();
+			}
+			return height;
+		}
+
+	}
+	
+	@Test
+	public void readImageWidthAndHeight() throws Exception {
+		blobKey = createBlob("sample-image.png");
+		ImageReadCallback imageReaderCallback = new ImageReadCallback();
+		blobstoreService.readBlob(blobKey, imageReaderCallback);
+		assertTrue("Callback must be called", imageReaderCallback.isCalled());
+		assertEquals(252, imageReaderCallback.getWidth());
+		assertEquals(150, imageReaderCallback.getHeight());
 	}
 
 }

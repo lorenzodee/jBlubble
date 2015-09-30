@@ -115,6 +115,49 @@ public interface BlobstoreService {
 			throws IOException, BlobstoreException;
 
 	/**
+	 * Writes the blob with the given identifier to the given output stream.
+	 * This method serves a byte range of the blob.
+	 * 
+	 * @param blobKey
+	 *            the unique identifier
+	 * @param out
+	 *            the output stream
+	 * @param start
+	 *            Start index of blob range to serve
+	 * @throws IOException
+	 *             if an I/O error occurred
+	 * @throws BlobstoreException
+	 *             if an error occurs while retrieving the blob (e.g. does not
+	 *             exist)
+	 * @since 1.1
+	 */
+	void serveBlob(BlobKey blobKey, OutputStream out, long start)
+			throws IOException, BlobstoreException;
+
+	/**
+	 * Writes the blob with the given identifier to the given output stream.
+	 * This method serves a byte range of the blob.
+	 * 
+	 * @param blobKey
+	 *            the unique identifier
+	 * @param out
+	 *            the output stream
+	 * @param start
+	 *            Start index of byte range to serve
+	 * @param end
+	 *            End index of byte range to serve. Index is inclusive, meaning
+	 *            the byte indicated by end is included in the output stream.
+	 * @throws IOException
+	 *             if an I/O error occurred
+	 * @throws BlobstoreException
+	 *             if an error occurs while retrieving the blob (e.g. does not
+	 *             exist)
+	 * @since 1.1
+	 */
+	void serveBlob(BlobKey blobKey, OutputStream out, long start, long end)
+			throws IOException, BlobstoreException;
+
+	/**
 	 * Deletes the specified blobs.
 	 * 
 	 * @param blobKeys
@@ -124,5 +167,23 @@ public interface BlobstoreService {
 	 *             if an error occurs while deleting the blobs
 	 */
 	int[] delete(BlobKey... blobKeys) throws BlobstoreException;
+
+	/**
+	 * Reads the blob with the given identifier. The blob contents are made
+	 * available to the callback as an {@link InputStream input stream}.
+	 *
+	 * @param blobKey
+	 *            the unique identifier
+	 * @param callback
+	 *            the call-back interface to read blob contents
+	 * @throws IOException
+	 *             if an I/O error occurred
+	 * @throws BlobstoreException
+	 *             if an error occurs while retrieving the blob (e.g. does not
+	 *             exist)
+	 * @since 1.1
+	 */
+	void readBlob(BlobKey blobKey, BlobstoreReadCallback callback)
+			throws IOException, BlobstoreException;
 
 }
