@@ -152,7 +152,6 @@ public class JdbcBlobstoreService extends AbstractJdbcBlobstoreService {
 					}
 					Blob blob = rs.getBlob(1);
 					try {
-						blob.getBinaryStream(start, end <= 0 ? blob.length() : end);
 						try (InputStream in = blob.getBinaryStream()) {
 							copy(in, out);
 						}
