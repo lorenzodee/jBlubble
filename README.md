@@ -93,6 +93,21 @@ public class Person {
 }
 ```
 
+Another common use case is storing the width and height of images (stored as BLOBs). Instead of modifying the `BlobstoreService` to become aware of image dimensions, it would be better (and easier) to define the image entity as such (below), and reference the BLOB.
+
+```java
+@Entity
+public class ProductImage {
+	@Id ...;
+	private int width;
+	private int height;
+	... BlobKey blobKey; // retrieved via BlobstoreService
+	...
+}
+```
+
+Using this pattern of referencing the BLOB (instead of modifying it with application-specific attributes) will keep BLOB handling simple and more re-usable.
+
 ## Motivation
 
 You can read [blog post](http://lorenzo-dee.blogspot.com/2015/09/blob-handling-java-jdbc.html) to understand how this API began.
