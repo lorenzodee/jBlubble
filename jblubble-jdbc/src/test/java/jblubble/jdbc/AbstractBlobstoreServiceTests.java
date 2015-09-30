@@ -268,4 +268,14 @@ public abstract class AbstractBlobstoreServiceTests {
 		assertEquals(150, imageReaderCallback.getHeight());
 	}
 
+	@Test
+	public void readBlobNotFound() throws Exception {
+		blobKey = new BlobKey("1234"); // this ID does not exist
+		try {
+			blobstoreService.readBlob(blobKey, null);
+			fail("Exception should have been thrown");
+		} catch (BlobstoreException e) {
+		}
+	}
+
 }
