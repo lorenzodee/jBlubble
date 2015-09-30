@@ -18,11 +18,13 @@ import org.springframework.jdbc.core.BatchPreparedStatementSetter;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.PreparedStatementCreator;
 import org.springframework.jdbc.core.ResultSetExtractor;
+import org.springframework.jdbc.core.RowCallbackHandler;
 import org.springframework.jdbc.support.GeneratedKeyHolder;
 
 import jblubble.BlobInfo;
 import jblubble.BlobKey;
 import jblubble.BlobstoreException;
+import jblubble.BlobstoreReadCallback;
 import jblubble.BlobstoreService;
 import jblubble.BlobstoreWriteCallback;
 import jblubble.jdbc.AbstractJdbcBlobstoreService;
@@ -123,6 +125,23 @@ public class SpringJdbcBlobstoreService extends AbstractJdbcBlobstoreService {
 	@Override
 	public void serveBlob(BlobKey blobKey, OutputStream out)
 			throws IOException, BlobstoreException {
+		serveBlob(blobKey, out, 0);
+	}
+
+	@Override
+	public void serveBlob(BlobKey blobKey, OutputStream out, long start)
+			throws IOException, BlobstoreException {
+		serveBlobInternal(blobKey, out, start, -1, false);
+	}
+
+	@Override
+	public void serveBlob(BlobKey blobKey, OutputStream out, long start, long end)
+			throws IOException, BlobstoreException {
+		serveBlobInternal(blobKey, out, start, end, true);
+	}
+
+	protected void serveBlobInternal(
+			BlobKey blobKey, OutputStream out, long start, long end, boolean useEnd) {
 		try {
 			jdbcTemplate.query(
 					getSelectContentByIdSql(),
@@ -135,13 +154,19 @@ public class SpringJdbcBlobstoreService extends AbstractJdbcBlobstoreService {
 										"Blob not found: " + blobKey);
 							}
 							Blob blob = rs.getBlob("content");
-							try (InputStream in = blob.getBinaryStream()) {
-								copy(in, out);
-							} catch (IOException ioe) {
-								throw new BlobstoreException(
-										"Error while reading blob", ioe);
+							try {
+								long pos = start + 1;
+								long length = useEnd ? (end - start + 1) : blob.length();
+								try (InputStream in = blob.getBinaryStream(pos, length)) {
+									copy(in, out);
+								} catch (IOException ioe) {
+									throw new BlobstoreException(
+											"Error while reading blob", ioe);
+								}
+								return blob.length();
+							} finally {
+								blob.free();
 							}
-							return blob.length();
 						}
 					}, Long.valueOf(blobKey.stringValue()));
 		} catch (DataAccessException e) {
@@ -166,6 +191,33 @@ public class SpringJdbcBlobstoreService extends AbstractJdbcBlobstoreService {
 							return blobKeys.length;
 						}
 					});
+		} catch (DataAccessException e) {
+			throw new BlobstoreException(e);
+		}
+	}
+
+	@Override
+	public void readBlob(BlobKey blobKey, BlobstoreReadCallback callback)
+			throws IOException, BlobstoreException {
+		try {
+			jdbcTemplate.query(
+					getSelectContentByIdSql(),
+					new RowCallbackHandler() {
+						@Override
+						public void processRow(ResultSet rs) throws SQLException {
+							Blob blob = rs.getBlob("content");
+							try {
+								try (InputStream in = blob.getBinaryStream()) {
+									callback.readInputStream(in);
+								} catch (IOException ioe) {
+									throw new BlobstoreException(
+											"Error while reading blob", ioe);
+								}
+							} finally {
+								blob.free();
+							}
+						}
+					}, Long.valueOf(blobKey.stringValue()));
 		} catch (DataAccessException e) {
 			throw new BlobstoreException(e);
 		}
