@@ -18,13 +18,15 @@ import org.apache.commons.io.input.CountingInputStream;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.TransactionStatus;
+import org.springframework.transaction.support.DefaultTransactionDefinition;
 
 import jblubble.BlobInfo;
 import jblubble.BlobKey;
 import jblubble.BlobstoreException;
 import jblubble.BlobstoreReadCallback;
 import jblubble.BlobstoreService;
-import jblubble.BlobstoreWriteCallback;
 
 public abstract class AbstractBlobstoreServiceTests {
 
@@ -114,19 +116,15 @@ public abstract class AbstractBlobstoreServiceTests {
 		InputStream in = getClass().getResourceAsStream(inputFileName);
 		assertNotNull("Input file not found [" + inputFileName + "]", in);
 		try {
-			blobKey = blobstoreService.createBlob(
-					new BlobstoreWriteCallback() {
-						@Override
-						public long writeToOutputStream(OutputStream out) throws IOException {
-							byte[] buffer = new byte[1024];
-							long totalLength = 0;
-							int len;
-							while ((len = in.read(buffer)) != -1) {
-								out.write(buffer, 0, len);
-								totalLength += len;
-							}
-							return totalLength;
+			blobKey = blobstoreService.createBlob((out) -> {
+						byte[] buffer = new byte[1024];
+						long totalLength = 0;
+						int len;
+						while ((len = in.read(buffer)) != -1) {
+							out.write(buffer, 0, len);
+							totalLength += len;
 						}
+						return totalLength;
 					}, "test", "image/png");
 			assertNotNull(blobKey);
 		} finally {
@@ -276,6 +274,29 @@ public abstract class AbstractBlobstoreServiceTests {
 			fail("Exception should have been thrown");
 		} catch (BlobstoreException e) {
 		}
+	}
+
+	protected abstract PlatformTransactionManager getTransactionManager();
+
+	// This test relies on Spring's TransactionAwareDataSourceProxy.
+	// It shows how the BlobstoreService can be configured to participate
+	// in Spring-managed transactions.
+	@Test
+	public void createBlobWithinTransaction() throws Exception {
+		long originalCount = 0;
+		originalCount = countBlobs();
+		PlatformTransactionManager transactionManager = getTransactionManager();
+		TransactionStatus transactionStatus =
+				transactionManager.getTransaction(new DefaultTransactionDefinition());
+		createBlob("sample-image.png");
+		transactionManager.commit(transactionStatus);
+		assertEquals(originalCount + 1, countBlobs());
+		transactionStatus =
+				transactionManager.getTransaction(new DefaultTransactionDefinition());
+		createBlob("sample-image.png");
+		createBlob("sample-image.png");
+		transactionManager.rollback(transactionStatus);
+		assertEquals(originalCount + 1, countBlobs());
 	}
 
 }

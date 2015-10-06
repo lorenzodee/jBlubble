@@ -7,6 +7,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
+import org.springframework.transaction.PlatformTransactionManager;
 
 import jblubble.BlobstoreService;
 import jblubble.jdbc.JdbcBlobstoreService;
@@ -17,6 +18,8 @@ public class JdbcBlobstoreServiceTests extends AbstractBlobstoreServiceTests {
 
 	@Autowired
 	private DataSource dataSource;
+	@Autowired
+	private PlatformTransactionManager transactionManager;
 	@Autowired
 	private JdbcTemplate jdbcTemplate;
 
@@ -32,6 +35,11 @@ public class JdbcBlobstoreServiceTests extends AbstractBlobstoreServiceTests {
 		return jdbcTemplate.queryForObject(
 				"SELECT count(*) FROM " + blobstoreService.getTableName(),
 				Long.class);
+	}
+
+	@Override
+	protected PlatformTransactionManager getTransactionManager() {
+		return transactionManager;
 	}
 
 }
