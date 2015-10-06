@@ -1,12 +1,10 @@
-package jblubble.impl;
+package jblubble.jdbc.springframework;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.sql.Blob;
-import java.sql.Connection;
 import java.sql.PreparedStatement;
-import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 
@@ -16,9 +14,6 @@ import org.apache.commons.io.output.CountingOutputStream;
 import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.BatchPreparedStatementSetter;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.jdbc.core.PreparedStatementCreator;
-import org.springframework.jdbc.core.ResultSetExtractor;
-import org.springframework.jdbc.core.RowCallbackHandler;
 import org.springframework.jdbc.support.GeneratedKeyHolder;
 
 import jblubble.BlobInfo;
@@ -33,6 +28,9 @@ import jblubble.jdbc.AbstractJdbcBlobstoreService;
  * An experimental {@link BlobstoreService blobstore service} implementation
  * using {@link JdbcTemplate} in Spring Framework. Using {@link JdbcTemplate
  * JDBC template} translates JDBC exceptions to {@link DataAccessException}s.
+ * <p>
+ * This has the added advantage of inherently being able to participate in
+ * Spring-managed transactions.
  *
  */
 public class SpringJdbcBlobstoreService extends AbstractJdbcBlobstoreService {
@@ -51,43 +49,39 @@ public class SpringJdbcBlobstoreService extends AbstractJdbcBlobstoreService {
 		try {
 			GeneratedKeyHolder keyHolder = new GeneratedKeyHolder();
 			jdbcTemplate.update(
-					new PreparedStatementCreator() {
-						@Override
-						public PreparedStatement createPreparedStatement(
-								Connection connection) throws SQLException {
+					(connection) -> {
+						try {
+							PreparedStatement ps = connection.prepareStatement(
+									getInsertSql(),
+									Statement.RETURN_GENERATED_KEYS);
+							ps.setString(1, name);
+							ps.setString(2, contentType);
+							Blob content = connection.createBlob();
+							long size;
+							OutputStream out = content.setBinaryStream(1L);
 							try {
-								PreparedStatement ps = connection.prepareStatement(
-										getInsertSql(),
-										Statement.RETURN_GENERATED_KEYS);
-								ps.setString(1, name);
-								ps.setString(2, contentType);
-								Blob content = connection.createBlob();
-								long size;
-								OutputStream out = content.setBinaryStream(1L);
+								CountingOutputStream countingOutputStream =
+										new CountingOutputStream(out);
 								try {
-									CountingOutputStream countingOutputStream =
-											new CountingOutputStream(out);
-									try {
-										size = callback.writeToOutputStream(
-												countingOutputStream);
-										if (size == -1L) {
-											size = countingOutputStream.getByteCount();
-										}
-									} finally {
-										countingOutputStream.close();
+									size = callback.writeToOutputStream(
+											countingOutputStream);
+									if (size == -1L) {
+										size = countingOutputStream.getByteCount();
 									}
 								} finally {
-									out.close();
+									countingOutputStream.close();
 								}
-								ps.setBlob(3, content);
-								ps.setLong(4, size);
-								ps.setTimestamp(5, new java.sql.Timestamp(
-										new java.util.Date().getTime()));
-								return ps;
-							} catch (IOException e) {
-								throw new BlobstoreException(
-										"Error when creating blob", e);
+							} finally {
+								out.close();
 							}
+							ps.setBlob(3, content);
+							ps.setLong(4, size);
+							ps.setTimestamp(5, new java.sql.Timestamp(
+									new java.util.Date().getTime()));
+							return ps;
+						} catch (IOException e) {
+							throw new BlobstoreException(
+									"Error when creating blob", e);
 						}
 					}, keyHolder);
 			return new BlobKey(
@@ -102,20 +96,16 @@ public class SpringJdbcBlobstoreService extends AbstractJdbcBlobstoreService {
 		try {
 			return jdbcTemplate.query(
 					getSelectNonContentFieldsByIdSql(),
-					new ResultSetExtractor<BlobInfo>() {
-						@Override
-						public BlobInfo extractData(ResultSet rs)
-								throws SQLException, DataAccessException {
-							if (!rs.next()) {
-								return null;
-							}
-							return new BlobInfo(
-									blobKey,
-									rs.getString("name"),
-									rs.getString("content_type"),
-									rs.getLong("size"),
-									rs.getTimestamp("date_created"));
+					(rs) -> {
+						if (!rs.next()) {
+							return null;
 						}
+						return new BlobInfo(
+								blobKey,
+								rs.getString("name"),
+								rs.getString("content_type"),
+								rs.getLong("size"),
+								rs.getTimestamp("date_created"));
 					}, Long.valueOf(blobKey.stringValue()));
 		} catch (DataAccessException e) {
 			throw new BlobstoreException(e);
@@ -145,28 +135,24 @@ public class SpringJdbcBlobstoreService extends AbstractJdbcBlobstoreService {
 		try {
 			jdbcTemplate.query(
 					getSelectContentByIdSql(),
-					new ResultSetExtractor<Long>() {
-						@Override
-						public Long extractData(ResultSet rs)
-								throws SQLException, DataAccessException {
-							if (!rs.next()) {
+					(rs) -> {
+						if (!rs.next()) {
+							throw new BlobstoreException(
+									"Blob not found: " + blobKey);
+						}
+						Blob blob = rs.getBlob("content");
+						try {
+							long pos = start + 1;
+							long length = useEnd ? (end - start + 1) : blob.length();
+							try (InputStream in = blob.getBinaryStream(pos, length)) {
+								copy(in, out);
+							} catch (IOException ioe) {
 								throw new BlobstoreException(
-										"Blob not found: " + blobKey);
+										"Error while reading blob", ioe);
 							}
-							Blob blob = rs.getBlob("content");
-							try {
-								long pos = start + 1;
-								long length = useEnd ? (end - start + 1) : blob.length();
-								try (InputStream in = blob.getBinaryStream(pos, length)) {
-									copy(in, out);
-								} catch (IOException ioe) {
-									throw new BlobstoreException(
-											"Error while reading blob", ioe);
-								}
-								return blob.length();
-							} finally {
-								blob.free();
-							}
+							return blob.length();
+						} finally {
+							blob.free();
 						}
 					}, Long.valueOf(blobKey.stringValue()));
 		} catch (DataAccessException e) {
@@ -202,20 +188,22 @@ public class SpringJdbcBlobstoreService extends AbstractJdbcBlobstoreService {
 		try {
 			jdbcTemplate.query(
 					getSelectContentByIdSql(),
-					new RowCallbackHandler() {
-						@Override
-						public void processRow(ResultSet rs) throws SQLException {
-							Blob blob = rs.getBlob("content");
-							try {
-								try (InputStream in = blob.getBinaryStream()) {
-									callback.readInputStream(in);
-								} catch (IOException ioe) {
-									throw new BlobstoreException(
-											"Error while reading blob", ioe);
-								}
-							} finally {
-								blob.free();
+					(rs) -> {
+						if (!rs.next()) {
+							throw new BlobstoreException(
+									"Blob not found: " + blobKey);
+						}
+						Blob blob = rs.getBlob("content");
+						try {
+							try (InputStream in = blob.getBinaryStream()) {
+								callback.readInputStream(in);
+								return true;
+							} catch (IOException ioe) {
+								throw new BlobstoreException(
+										"Error while reading blob", ioe);
 							}
+						} finally {
+							blob.free();
 						}
 					}, Long.valueOf(blobKey.stringValue()));
 		} catch (DataAccessException e) {

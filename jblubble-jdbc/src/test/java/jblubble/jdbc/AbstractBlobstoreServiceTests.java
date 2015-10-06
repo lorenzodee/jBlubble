@@ -62,7 +62,8 @@ public abstract class AbstractBlobstoreServiceTests {
 			out.close();
 		}
 		assertEquals(
-				new File(getClass().getResource(inputFileName).toURI()).length(),
+				new File(AbstractBlobstoreServiceTests.class.getResource(
+						inputFileName).toURI()).length(),
 				outputFile.length());
 		assertTrue(outputFile.delete());
 	}
@@ -98,7 +99,7 @@ public abstract class AbstractBlobstoreServiceTests {
 
 	protected BlobKey createBlob(String inputFileName) throws BlobstoreException, IOException {
 		BlobKey blobKey;
-		InputStream in = getClass().getResourceAsStream(inputFileName);
+		InputStream in = AbstractBlobstoreServiceTests.class.getResourceAsStream(inputFileName);
 		assertNotNull("Input file not found [" + inputFileName + "]", in);
 		try {
 			blobKey = blobstoreService.createBlob(
@@ -113,7 +114,7 @@ public abstract class AbstractBlobstoreServiceTests {
 	@Test
 	public void createBlobWithOutputStream() throws Exception {
 		String inputFileName = "sample-image.png";
-		InputStream in = getClass().getResourceAsStream(inputFileName);
+		InputStream in = AbstractBlobstoreServiceTests.class.getResourceAsStream(inputFileName);
 		assertNotNull("Input file not found [" + inputFileName + "]", in);
 		try {
 			blobKey = blobstoreService.createBlob((out) -> {
@@ -138,7 +139,8 @@ public abstract class AbstractBlobstoreServiceTests {
 			out.close();
 		}
 		assertEquals(
-				new File(getClass().getResource(inputFileName).toURI()).length(),
+				new File(AbstractBlobstoreServiceTests.class.getResource(
+						inputFileName).toURI()).length(),
 				outputFile.length());
 		assertTrue(outputFile.delete());
 	}
@@ -160,7 +162,7 @@ public abstract class AbstractBlobstoreServiceTests {
 	@Test
 	public void noRowsInsertedWhenInputStreamThrowsException() throws Exception {
 		String inputFileName = "sample-image.png";
-		InputStream in = getClass().getResourceAsStream(inputFileName);
+		InputStream in = AbstractBlobstoreServiceTests.class.getResourceAsStream(inputFileName);
 		assertNotNull("Input file not found [" + inputFileName + "]", in);
 		long originalCount = 0;
 		try {
@@ -184,7 +186,7 @@ public abstract class AbstractBlobstoreServiceTests {
 			originalCount = countBlobs();
 			blobstoreService.createBlob(in, "test", "image/png");
 			fail("Exception should have been thrown");
-		} catch (IOException ioe) {
+		} catch (BlobstoreException | IOException ioe) {
 			assertEquals(originalCount, countBlobs());
 		} finally {
 			in.close();
@@ -205,7 +207,8 @@ public abstract class AbstractBlobstoreServiceTests {
 			out.close();
 		}
 		assertEquals(
-				new File(getClass().getResource(inputFileName).toURI()).length(),
+				new File(AbstractBlobstoreServiceTests.class.getResource(
+						inputFileName).toURI()).length(),
 				outputFile.length());
 		// Check if image is still intact
 		BufferedImage outputImage = ImageIO.read(outputFile);
