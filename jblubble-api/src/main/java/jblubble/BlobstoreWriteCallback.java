@@ -8,6 +8,7 @@ import java.io.OutputStream;
  * will set the blob contents.
  *
  */
+@FunctionalInterface
 public interface BlobstoreWriteCallback {
 
 	/**

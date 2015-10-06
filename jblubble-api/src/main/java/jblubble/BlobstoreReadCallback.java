@@ -8,6 +8,7 @@ import java.io.InputStream;
  * will read the blob contents.
  *
  */
+@FunctionalInterface
 public interface BlobstoreReadCallback {
 
 	/**
