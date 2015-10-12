@@ -22,11 +22,6 @@
 			<groupId>com.orangeandbronze</groupId>
 			<artifactId>jblubble-jdbc</artifactId>
 			<version>${project.version}</version>
-			<!-- scope>runtime</scope -->
-			<!--
-				Compile scope needed due to experimental Spring-based BlobstoreService implementation.
-				Otheriwse, a runtime scope would suffice.
-			-->
 		</dependency>
 		<dependency>
 			<groupId>org.hsqldb</groupId>
@@ -123,6 +118,17 @@
 
 	<build>
 		<plugins>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-compiler-plugin</artifactId>
+				<version>3.2</version>
+				<configuration>
+					<source>${maven.compile.sourceLevel}</source>
+					<target>${maven.compile.targetLevel}</target>
+					<debug>true</debug>
+					<debuglevel>lines,vars,source</debuglevel>
+				</configuration>
+			</plugin>
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-war-plugin</artifactId>
