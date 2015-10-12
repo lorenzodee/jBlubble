@@ -10,7 +10,7 @@
 		</encoder>
 	</appender>
 
-	<logger name="jblubble" level="debug" />
+	<logger name="com.orangeandbronze.jblubble" level="debug" />
 
 	<logger name="org.springframework" level="warn" />
 	<logger name="org.springframework.web" level="info" />
