@@ -24,7 +24,7 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurerAdapter
 
 @Configuration
 @EnableWebMvc
-@ComponentScan(basePackages = { "jblubble.sample" })
+@ComponentScan(basePackages = { "com.orangeandbronze.jblubble.sample" })
 public class BlobstoreSampleWebMvcConfig extends WebMvcConfigurerAdapter {
 
 	@Override

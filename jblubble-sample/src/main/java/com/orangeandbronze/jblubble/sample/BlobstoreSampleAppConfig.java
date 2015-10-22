@@ -43,8 +43,8 @@ public class BlobstoreSampleAppConfig {
 		EmbeddedDatabaseBuilder builder = new EmbeddedDatabaseBuilder();
 		EmbeddedDatabase db = builder
 				.setType(EmbeddedDatabaseType.HSQL)
-				.addScript("classpath:/jblubble/jdbc/create-lob-table.sql")
-				.addScript("classpath:/jblubble/sample/create-person-table.sql")
+				.addScript("classpath:/com/orangeandbronze/jblubble/jdbc/create-lob-table.sql")
+				.addScript("classpath:/com/orangeandbronze/jblubble/sample/create-person-table.sql")
 				.build();
 		return db;
 	}
@@ -58,7 +58,7 @@ public class BlobstoreSampleAppConfig {
 	public LocalContainerEntityManagerFactoryBean entityManagerFactory() {
 		LocalContainerEntityManagerFactoryBean entityManagerFactoryBean = new LocalContainerEntityManagerFactoryBean();
 		entityManagerFactoryBean.setDataSource(dataSource());
-		entityManagerFactoryBean.setPackagesToScan("jblubble.sample");
+		entityManagerFactoryBean.setPackagesToScan("com.orangeandbronze.jblubble.sample");
 		entityManagerFactoryBean.setJpaVendorAdapter(new HibernateJpaVendorAdapter());
 		Properties jpaProperties = new Properties();
 		jpaProperties.setProperty(
