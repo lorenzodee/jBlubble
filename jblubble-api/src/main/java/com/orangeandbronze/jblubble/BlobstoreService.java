@@ -20,11 +20,16 @@ import java.io.InputStream;
 import java.io.OutputStream;
 
 /**
- * Manage the creation and serving of large binary objects (or BLOBs).
+ * Strategy interface for the creation and serving of large binary objects (or
+ * BLOBs). The BLOBs are intended to be immutable. Once created, the BLOB
+ * cannot be changed.
+ *
+ * <h3>Some Sample Use Cases</h3>
  * <p>
  * When handling file uploads in servlets (3.0 and above), this is how the
  * service can be used:
  * </p>
+ * 
  * <pre>
  * // HttpServletRequest
  * request.getPart("...").write(fileName);
@@ -32,6 +37,7 @@ import java.io.OutputStream;
  * InputStream in = new FileInputStream(fileName);
  * ... blobKey = blobstoreService.createBlob(in, ...);
  * </pre>
+ * 
  * <pre>
  * // HttpServletResponse
  * BlobInfo blobInfo = blobstoreService.getBlobInfo(blobKey);
@@ -42,7 +48,7 @@ import java.io.OutputStream;
  * <p>
  * When using Spring MVC, this is how the service can be used inside a
  * controller:
- * 
+ * </p>
  * <pre>
  * // MultipartFile
  * ... blobKey = blobstoreService.createBlob(
