@@ -21,8 +21,9 @@ import java.io.OutputStream;
 
 /**
  * Strategy interface for the creation and serving of large binary objects (or
- * BLOBs). The BLOBs are intended to be immutable. Once created, the BLOB
- * cannot be changed.
+ * BLOBs). The BLOBs are intended to be immutable. Once created, the BLOB cannot
+ * be changed. To change, a new BLOB should be created, reference the new one,
+ * and possibly delete the old one.
  *
  * <h3>Some Sample Use Cases</h3>
  * <p>
@@ -49,6 +50,7 @@ import java.io.OutputStream;
  * When using Spring MVC, this is how the service can be used inside a
  * controller:
  * </p>
+ * 
  * <pre>
  * // MultipartFile
  * ... blobKey = blobstoreService.createBlob(

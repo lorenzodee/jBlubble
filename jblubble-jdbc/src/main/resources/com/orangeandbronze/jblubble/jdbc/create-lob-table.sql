@@ -7,5 +7,6 @@ CREATE TABLE lobs (
 	content BLOB,
 	size bigint,
 	date_created TIMESTAMP, 
+	md5_hash varchar(255),
 	primary key (id)
 );

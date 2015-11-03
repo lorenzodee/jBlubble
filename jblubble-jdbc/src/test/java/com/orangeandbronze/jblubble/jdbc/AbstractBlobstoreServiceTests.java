@@ -153,14 +153,14 @@ public abstract class AbstractBlobstoreServiceTests {
 		}
 		blobKeys[3] = new BlobKey("1234"); // this ID does not exist
 		int[] updateCounts = blobstoreService.delete(blobKeys);
-		assertEquals(1, updateCounts[0]);
-		assertEquals(1, updateCounts[1]);
-		assertEquals(1, updateCounts[2]);
+		assertTrue(updateCounts[0] > 0);
+		assertTrue(updateCounts[1] > 0);
+		assertTrue(updateCounts[2] > 0);
 		assertEquals(0, updateCounts[3]);
 	}
 
 	@Test
-	public void noRowsInsertedWhenInputStreamThrowsException() throws Exception {
+	public void noItemCreatedWhenInputStreamThrowsException() throws Exception {
 		String inputFileName = "sample-image.png";
 		InputStream in = AbstractBlobstoreServiceTests.class.getResourceAsStream(inputFileName);
 		assertNotNull("Input file not found [" + inputFileName + "]", in);
@@ -300,6 +300,13 @@ public abstract class AbstractBlobstoreServiceTests {
 		createBlob("sample-image.png");
 		transactionManager.rollback(transactionStatus);
 		assertEquals(originalCount + 1, countBlobs());
+	}
+
+	@Test
+	public void md5Hash() throws Exception {
+		blobKey = createBlob("sample-image.png");
+		BlobInfo blobInfo = blobstoreService.getBlobInfo(blobKey);
+		assertEquals("1bc7471b09047a7e72481b38c8ee4da2", blobInfo.getMd5Hash());
 	}
 
 }

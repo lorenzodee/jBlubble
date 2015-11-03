@@ -41,5 +41,5 @@ public class JdbcBlobstoreServiceTests extends AbstractBlobstoreServiceTests {
 	protected PlatformTransactionManager getTransactionManager() {
 		return transactionManager;
 	}
-
+	
 }

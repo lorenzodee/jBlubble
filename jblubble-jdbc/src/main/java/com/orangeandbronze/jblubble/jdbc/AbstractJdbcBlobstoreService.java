@@ -64,8 +64,8 @@ public abstract class AbstractJdbcBlobstoreService implements BlobstoreService {
 	}
 
 	private static final String INSERT_SQL =
-			"INSERT INTO %s (name, content_type, content, size, date_created) "
-			+ "VALUES (?, ?, ?, ?, ?)";
+			"INSERT INTO %s (name, content_type, content, size, date_created, md5_hash) "
+			+ "VALUES (?, ?, ?, ?, ?, ?)";
 
 	protected String getInsertSql() {
 		return String.format(INSERT_SQL, getTableName());
@@ -79,7 +79,7 @@ public abstract class AbstractJdbcBlobstoreService implements BlobstoreService {
 	}
 
 	private static final String SELECT_NON_CONTENT_FIELDS_BY_ID_SQL =
-			"SELECT name, content_type, size, date_created FROM %s WHERE id = ?";
+			"SELECT name, content_type, size, date_created, md5_hash FROM %s WHERE id = ?";
 
 	protected String getSelectNonContentFieldsByIdSql() {
 		return String.format(SELECT_NON_CONTENT_FIELDS_BY_ID_SQL, getTableName());
@@ -112,6 +112,21 @@ public abstract class AbstractJdbcBlobstoreService implements BlobstoreService {
 				return -1L;
 			}
 		}, name, contentType);
+	}
+
+	protected static final String MD5_ALGORITHM_NAME = "MD5";
+
+	protected static final char[] HEX_CHARS =
+			{'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f'};
+
+	protected static char[] encodeHex(byte[] bytes) {
+		char chars[] = new char[32];
+		for (int i = 0; i < chars.length; i = i + 2) {
+			byte b = bytes[i / 2];
+			chars[i] = HEX_CHARS[(b >>> 0x4) & 0xf];
+			chars[i + 1] = HEX_CHARS[b & 0xf];
+		}
+		return chars;
 	}
 
 }

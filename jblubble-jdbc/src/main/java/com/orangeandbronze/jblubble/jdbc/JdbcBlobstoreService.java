@@ -18,6 +18,9 @@ package com.orangeandbronze.jblubble.jdbc;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.security.DigestOutputStream;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.sql.Blob;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -39,8 +42,16 @@ import com.orangeandbronze.jblubble.BlobstoreWriteCallback;
 /**
  * {@link BlobstoreService Blobstore service} implementation using JDBC.
  * <p>
- * Requires Java 7 (due to try-with-resources) and JDBC 4.0 (due to
- * {@link Connection#createBlob()}).
+ * This implementation uses a table with the following columns:
+ * </p>
+ * <ul>
+ * <li>name</li>
+ * <li>content_type</li>
+ * <li>content</li>
+ * <li>size</li>
+ * <li>date_created</li>
+ * <li>md5_hash</li>
+ * </ul>
  *
  * @author Lorenzo Dee
  */
@@ -79,15 +90,26 @@ public class JdbcBlobstoreService extends AbstractJdbcBlobstoreService {
 				Blob content = connection.createBlob();
 				try {
 					long size;
+					String md5Hash = null;
 					OutputStream out = content.setBinaryStream(1L);
 					try {
 						CountingOutputStream countingOutputStream =
 								new CountingOutputStream(out);
 						try {
-							size = callback.writeToOutputStream(
-									countingOutputStream);
-							if (size == -1L) {
-								size = countingOutputStream.getByteCount();
+							MessageDigest md5;
+							try {
+								md5 = MessageDigest.getInstance(MD5_ALGORITHM_NAME);
+								try (DigestOutputStream digestOutputStream =
+										new DigestOutputStream(countingOutputStream, md5)) {
+									size = callback.writeToOutputStream(
+											digestOutputStream);
+									if (size == -1L) {
+										size = countingOutputStream.getByteCount();
+									}
+									md5Hash = new String(encodeHex(md5.digest()));
+								}
+							} catch (NoSuchAlgorithmException e) {
+								throw new BlobstoreException(e);
 							}
 						} finally {
 							countingOutputStream.close();
@@ -99,6 +121,7 @@ public class JdbcBlobstoreService extends AbstractJdbcBlobstoreService {
 					ps.setLong(4, size);
 					ps.setTimestamp(5, new java.sql.Timestamp(
 							new java.util.Date().getTime()));
+					ps.setString(6, md5Hash);
 					int rowCount = ps.executeUpdate();
 					if (rowCount == 0) {
 						throw new BlobstoreException(
@@ -133,7 +156,8 @@ public class JdbcBlobstoreService extends AbstractJdbcBlobstoreService {
 							rs.getString("name"),
 							rs.getString("content_type"),
 							rs.getLong("size"),
-							rs.getTimestamp("date_created"));
+							rs.getTimestamp("date_created"),
+							rs.getString("md5_hash"));
 				}
 			}
 		} catch (SQLException e) {

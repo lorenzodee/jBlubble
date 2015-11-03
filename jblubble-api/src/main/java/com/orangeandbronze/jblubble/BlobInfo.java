@@ -30,15 +30,17 @@ public class BlobInfo {
 	private final String contentType;
 	private final long size;
 	private final Date dateCreated;
+	private final String md5Hash;
 
 	public BlobInfo(BlobKey blobKey, String name, String contentType,
-			long size, Date dateCreated) {
+			long size, Date dateCreated, String md5Hash) {
 		super();
 		this.blobKey = blobKey;
 		this.name = name;
 		this.contentType = contentType;
 		this.size = size;
 		this.dateCreated = dateCreated;
+		this.md5Hash = md5Hash;
 	}
 
 	public BlobKey getBlobKey() {
@@ -61,6 +63,13 @@ public class BlobInfo {
 		return dateCreated;
 	}
 
+	/**
+	 * @since 1.1
+	 */
+	public String getMd5Hash() {
+		return md5Hash;
+	}
+
 	@Override
 	public int hashCode() {
 		final int prime = 31;
@@ -68,6 +77,7 @@ public class BlobInfo {
 		result = prime * result + ((blobKey == null) ? 0 : blobKey.hashCode());
 		result = prime * result + ((contentType == null) ? 0 : contentType.hashCode());
 		result = prime * result + ((dateCreated == null) ? 0 : dateCreated.hashCode());
+		result = prime * result + ((md5Hash == null) ? 0 : md5Hash.hashCode());
 		result = prime * result + ((name == null) ? 0 : name.hashCode());
 		result = prime * result + (int) (size ^ (size >>> 32));
 		return result;
@@ -96,6 +106,11 @@ public class BlobInfo {
 			if (other.dateCreated != null)
 				return false;
 		} else if (!dateCreated.equals(other.dateCreated))
+			return false;
+		if (md5Hash == null) {
+			if (other.md5Hash != null)
+				return false;
+		} else if (!md5Hash.equals(other.md5Hash))
 			return false;
 		if (name == null) {
 			if (other.name != null)
