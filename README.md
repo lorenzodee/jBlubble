@@ -1,8 +1,10 @@
 # jBlubble
 
-This project aims to make it easier to store and retrieve <abbr title="Binary Large OBject">BLOB</abbr>s (or binary large objects) to and from a database. Specifically, it aims to help with storing uploaded files and serving them in a web application. These files can be images (e.g. JPEG, PNG), PDF, or other potentially large objects (that would not fit well in a byte array or string).
+This project was originally born from storing uploaded files and serving them in a web application. These files are typically images (e.g. JPEG, PNG), PDFs, or other potentially large objects (that would not fit well in a byte array or string).
 
-The most common practice, albeit ill-advised, is to use byte arrays (`byte[]`). This often leads to out-of-memory failures as the files keep growing in size, and will not scale well. This project uses the lesser known features of JDBC 4.0 (Java 6) to store and retrieve BLOBs.
+After a few months, this project has evolved to making it easier to store and retrieve <abbr title="Binary Large OBject">BLOB</abbr>s (or binary large objects) to and from a persistent storage (e.g. relational database). A strategy interface is provided to abstract away the storage mechanism, and allowing different storage-specific implementations (e.g. database, file system, Amazon S3, Google Cloud Storage).
+
+The most common practice of storing BLOBs, albeit ill-advised, is to use byte arrays (`byte[]`). This often leads to out-of-memory failures as the files keep growing in size, and will not scale well. This project uses the lesser known features of JDBC 4.0 (Java 6) to store and retrieve BLOBs to and from relational databases.
 
 ## Getting Started
 
@@ -39,18 +41,18 @@ When using Spring MVC, this is how it can be used inside a controller:
 
 ## Maven Dependency
 
-To use in your Maven build, add the following to your `pom.xml`.
+To use in your Maven build, add the API and implementation(s) to your `pom.xml`.
 
 	<dependency>
 		<groupId>com.orangeandbronze</groupId>
 		<artifactId>jblubble-api</artifactId>
-		<version>1.0</version>
+		<version>1.1</version>
 	</dependency>
 	<dependency>
 		<groupId>com.orangeandbronze</groupId>
 		<artifactId>jblubble-jdbc</artifactId>
-		<version>1.0</version>
-		<scope>runtime</scope>
+		<!-- jblubble-filesystem or some other implementation -->
+		<version>1.1</version>
 	</dependency>
 
 
@@ -78,6 +80,7 @@ So, instead of this...
 public class Person {
 	@Id private Long id;
 	@Lob private byte[] photo;
+	private int photoWidth, photoHeight;
 	...
 }
 ```
@@ -88,23 +91,21 @@ public class Person {
 @Entity
 public class Person {
 	@Id private Long id;
-	... BlobKey photoId; // retrieved via BlobstoreService
+	private Image photo;
 	...
 }
 ```
-
-Another common use case is storing the width and height of images (stored as BLOBs). Instead of modifying the `BlobstoreService` to become aware of image dimensions, it would be better (and easier) to define the image entity as such (below), and reference the BLOB.
 
 ```java
-@Entity
-public class ProductImage {
-	@Id ...;
-	private int width;
-	private int height;
-	... BlobKey blobKey; // retrieved via BlobstoreService
+@Embeddable
+public class Image {
+	private BlobKey imageId; // retrieved via BlobstoreService
+	private int photoWidth, photoHeight;
 	...
 }
 ```
+
+The above also has the benefit of providing the width and height of the image *before* it is streamed to the client (in this case, usually a browser).
 
 Using this pattern of referencing the BLOB (instead of modifying it with application-specific attributes) will keep BLOB handling simple and more re-usable.
 
