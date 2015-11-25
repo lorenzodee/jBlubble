@@ -15,6 +15,8 @@
  */
 package com.orangeandbronze.jblubble.jdbc.springframework;
 
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -22,7 +24,9 @@ import java.security.DigestOutputStream;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.sql.Blob;
+import java.sql.Connection;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 
@@ -31,8 +35,10 @@ import javax.sql.DataSource;
 import org.apache.commons.io.output.CountingOutputStream;
 import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.BatchPreparedStatementSetter;
+import org.springframework.jdbc.core.ConnectionCallback;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.jdbc.support.GeneratedKeyHolder;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.orangeandbronze.jblubble.BlobInfo;
 import com.orangeandbronze.jblubble.BlobKey;
@@ -48,11 +54,12 @@ import com.orangeandbronze.jblubble.jdbc.AbstractJdbcBlobstoreService;
  * template} translates JDBC exceptions to {@link DataAccessException}s.
  * <p>
  * This has the added advantage of inherently being able to participate in
- * Spring-managed transactions.
+ * Spring-managed transactions (if any).
  * </p>
  * 
  * @author Lorenzo Dee
  */
+@Transactional(propagation=Propagation.SUPPORTS)
 public class SpringJdbcBlobstoreService extends AbstractJdbcBlobstoreService {
 
 	private final JdbcTemplate jdbcTemplate;
@@ -62,24 +69,39 @@ public class SpringJdbcBlobstoreService extends AbstractJdbcBlobstoreService {
 		this.jdbcTemplate = new JdbcTemplate(dataSource);
 	}
 
+	protected long getGeneratedKey(PreparedStatement ps) throws SQLException {
+		long generatedId;
+		try (ResultSet generatedKeys = ps.getGeneratedKeys()) {
+			if (generatedKeys.next()) {
+				generatedId = generatedKeys.getLong(1);
+			} else {
+				throw new BlobstoreException(
+						"No unique key generated");
+			}
+		}
+		return generatedId;
+	}
+
 	@Override
 	public BlobKey createBlob(BlobstoreWriteCallback callback,
 			String name, String contentType)
 					throws IOException, BlobstoreException {
 		try {
-			GeneratedKeyHolder keyHolder = new GeneratedKeyHolder();
-			jdbcTemplate.update(
-					(connection) -> {
+			return jdbcTemplate.execute(new ConnectionCallback<BlobKey>() {
+				@Override
+				public BlobKey doInConnection(Connection connection)
+						throws SQLException, DataAccessException {
+					try (PreparedStatement ps = connection.prepareStatement(
+								getInsertSql(),
+								Statement.RETURN_GENERATED_KEYS)) {
+						ps.setString(1, name);
+						ps.setString(2, contentType);
+						Blob content = connection.createBlob();
 						try {
-							PreparedStatement ps = connection.prepareStatement(
-									getInsertSql(),
-									Statement.RETURN_GENERATED_KEYS);
-							ps.setString(1, name);
-							ps.setString(2, contentType);
-							Blob content = connection.createBlob();
 							long size;
 							String md5Hash = null;
-							OutputStream out = content.setBinaryStream(1L);
+							OutputStream out = new BufferedOutputStream(
+									content.setBinaryStream(1L), getBufferSize());
 							try {
 								CountingOutputStream countingOutputStream =
 										new CountingOutputStream(out);
@@ -110,14 +132,22 @@ public class SpringJdbcBlobstoreService extends AbstractJdbcBlobstoreService {
 							ps.setTimestamp(5, new java.sql.Timestamp(
 									new java.util.Date().getTime()));
 							ps.setString(6, md5Hash);
-							return ps;
-						} catch (IOException e) {
-							throw new BlobstoreException(
-									"Error when creating blob", e);
+							int rowCount = ps.executeUpdate();
+							if (rowCount == 0) {
+								throw new BlobstoreException(
+										"Creating blob failed, no rows created.");
+							}
+							long generatedId = getGeneratedKey(ps);
+							return new BlobKey(String.valueOf(generatedId));
+						} finally {
+							content.free();
 						}
-					}, keyHolder);
-			return new BlobKey(
-					String.valueOf(keyHolder.getKey().longValue()));
+					} catch (IOException e) {
+						throw new BlobstoreException(
+								"Error when creating blob", e);
+					}
+				}
+			});
 		} catch (DataAccessException e) {
 			throw new BlobstoreException(e);
 		}
@@ -177,7 +207,8 @@ public class SpringJdbcBlobstoreService extends AbstractJdbcBlobstoreService {
 						try {
 							long pos = start + 1;
 							long length = useEnd ? (end - start + 1) : blob.length();
-							try (InputStream in = blob.getBinaryStream(pos, length)) {
+							try (InputStream in = new BufferedInputStream(
+									blob.getBinaryStream(pos, length), getBufferSize())) {
 								copy(in, out);
 							} catch (IOException ioe) {
 								throw new BlobstoreException(

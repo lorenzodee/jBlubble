@@ -15,6 +15,8 @@
  */
 package com.orangeandbronze.jblubble.jdbc;
 
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -91,7 +93,8 @@ public class JdbcBlobstoreService extends AbstractJdbcBlobstoreService {
 				try {
 					long size;
 					String md5Hash = null;
-					OutputStream out = content.setBinaryStream(1L);
+					OutputStream out = new BufferedOutputStream(
+							content.setBinaryStream(1L), getBufferSize());
 					try {
 						CountingOutputStream countingOutputStream =
 								new CountingOutputStream(out);
@@ -192,7 +195,8 @@ public class JdbcBlobstoreService extends AbstractJdbcBlobstoreService {
 			public void handleBlob(Blob blob) throws SQLException, IOException {
 				long pos = start + 1; // for java.sql.Blob the first byte is at position 1
 				long length = useEnd ? (end - start + 1) : blob.length();
-				try (InputStream in = blob.getBinaryStream(pos, length)) {
+				try (InputStream in = new BufferedInputStream(
+						blob.getBinaryStream(pos, length), getBufferSize())) {
 					copy(in, out);
 				}
 			}
@@ -231,7 +235,8 @@ public class JdbcBlobstoreService extends AbstractJdbcBlobstoreService {
 		readBlobInternal(blobKey, new BlobHandler() {
 			@Override
 			public void handleBlob(Blob blob) throws SQLException, IOException {
-				try (InputStream in = blob.getBinaryStream()) {
+				try (InputStream in = new BufferedInputStream(
+						blob.getBinaryStream(), getBufferSize())) {
 					callback.readInputStream(in);
 				}
 			}

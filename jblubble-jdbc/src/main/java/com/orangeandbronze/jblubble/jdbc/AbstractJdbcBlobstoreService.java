@@ -28,7 +28,7 @@ import com.orangeandbronze.jblubble.BlobstoreWriteCallback;
 
 public abstract class AbstractJdbcBlobstoreService implements BlobstoreService {
 
-	public static final int DEFAULT_BUFFER_SIZE = 0x1000; // 4096 bytes, or 4 kilobytes
+	public static final int DEFAULT_BUFFER_SIZE = 0x2000; // 8192 bytes, or 8 kilobytes
 	public static final String DEFAULT_TABLE_NAME = "lobs";
 
 	protected final DataSource dataSource;
