@@ -24,6 +24,12 @@
 			<organization>Orange and Bronze Software Labs</organization>
 			<organizationUrl>http://www.orangeandbronze.com</organizationUrl>
 		</developer>
+		<developer>
+			<name>Marcial "Mike" Pua, Jr.</name>
+			<email>mike [dot] pua [AT] orangeandbronze.com</email>
+			<organization>Orange and Bronze Software Labs</organization>
+			<organizationUrl>http://www.orangeandbronze.com</organizationUrl>
+		</developer>
 	</developers>
 	<scm>
 		<connection>scm:git:git://github.com/lorenzodee/jBlubble.git</connection>

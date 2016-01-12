@@ -11,6 +11,10 @@
 	<artifactId>jblubble-jdbc</artifactId>
 	<packaging>jar</packaging>
 	<name>jblubble-jdbc</name>
+	
+	<properties>
+		<postgresql.version>9.4-1202-jdbc42</postgresql.version>
+	</properties>
 
 	<dependencies>
 		<dependency>
@@ -42,6 +46,12 @@
 		<dependency>
 			<groupId>org.hsqldb</groupId>
 			<artifactId>hsqldb</artifactId>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.postgresql</groupId>
+			<artifactId>postgresql</artifactId>
+			<version>${postgresql.version}</version>
 			<scope>test</scope>
 		</dependency>
 		<dependency>
