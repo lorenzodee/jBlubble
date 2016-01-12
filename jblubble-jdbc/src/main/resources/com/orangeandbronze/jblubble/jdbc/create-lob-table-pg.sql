@@ -11,10 +11,7 @@ CREATE TABLE lobs
   md5_hash VARCHAR(255),
   PRIMARY KEY (id)
 )
-WITH
-(
-  OIDS=TRUE
-);
+WITH OIDS;
 
 CREATE OR REPLACE RULE removelobcontent AS ON DELETE TO lobs
   DO SELECT lo_unlink( OLD.content );
