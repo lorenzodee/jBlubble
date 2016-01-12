@@ -18,7 +18,9 @@ With version 1.1, an implementation that uses the Spring Framework's `JdbcTempla
 
 ## Testing
 
-The unit tests are using an in-memory database (HSQL). The unit test for PostgreSQL need a database to execute against. It assume these defaults:
+Unless specified otherwise, the unit tests are using an in-memory database (HSQL).
+
+The unit test for PostgreSQL needs a database to execute against. It assume these defaults:
 
 	SERVER:     localhost
 	PORT:       5432
